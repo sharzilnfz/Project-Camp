@@ -73,3 +73,47 @@ export const registerUser = asyncHandler(async (req, res) => {
     ),
   );
 });
+
+export const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    throw new ApiError(400, 'All fields are required');
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new ApiError(400, 'User not found');
+  }
+
+  const isPasswordValid = await user.isPasswordCorrect(password);
+  if (!isPasswordValid) {
+    throw new ApiError(400, 'Invalid password');
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user?._id,
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(200)
+    .cookie('accessToken', accessToken, options)
+    .cookie('refreshToken', refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          accessToken,
+          refreshToken,
+          user: await User.findById(user?._id).select(
+            '-password -refreshToken -emailVerificationToken -emailVerificationExpiry -forgotPasswordToken -forgotPasswordExpiry',
+          ),
+        },
+        'User logged in successfully',
+      ),
+    );
+});

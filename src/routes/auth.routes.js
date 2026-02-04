@@ -1,9 +1,14 @@
 import express from 'express';
-import { registerUser } from '../controllers/auth.controllers.js';
+import { loginUser, registerUser } from '../controllers/auth.controllers.js';
+import { validate } from '../middlewares/validator.middleware.js';
+import {
+  userLoginValidator,
+  userRegisterValidator,
+} from '../validators/index.js';
 const router = express.Router();
 
-router.post('/register', registerUser);
-// router.post('/login', login);
+router.post('/register', userRegisterValidator(), validate, registerUser);
+router.post('/login', userLoginValidator(), validate, loginUser);
 // router.post('/logout', verifyJWT, logout);
 // router.get('/current-user', verifyJWT, getCurrentUser);
 // router.post('/change-password', verifyJWT, changePassword);
